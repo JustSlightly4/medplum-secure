@@ -46,6 +46,10 @@ export function sendOutcome(res: Response, outcome: OperationOutcome): Response 
       res.set('Location', uri);
     }
   }
+  const sanitizedOutcome: OperationOutcome = {
+    ...outcome,
+    issue: outcome.issue?.map(({ diagnostics: _diagnostics, ...issue }) => issue),
+  };
   let extension: Extension[] | undefined;
   const tracingExt = buildTracingExtension();
   if (tracingExt) {
@@ -55,7 +59,7 @@ export function sendOutcome(res: Response, outcome: OperationOutcome): Response 
     extension = append(extension, ext);
   }
   return res
-    .status(getStatus(outcome))
+    .status(getStatus(sanitizedOutcome))
     .type(ContentType.FHIR_JSON)
-    .json({ ...outcome, extension });
+    .json({ ...sanitizedOutcome, extension });
 }
