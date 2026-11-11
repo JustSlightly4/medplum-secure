@@ -256,7 +256,7 @@ const userProfileTokens = new Set([
  * @returns The prefetch query with variables replaced.
  */
 export function replaceQueryVariables(user: CdsUserResource, context: Record<string, unknown>, query: string): string {
-  return query.replaceAll(/\{\{([^}]+)\}\}/g, (substring, varName) => {
+  return query.replaceAll(/\{\{([^{}]+)\}\}/g, (substring, varName) => {
     varName = varName.trim();
 
     if (userProfileTokens.has(varName)) {
