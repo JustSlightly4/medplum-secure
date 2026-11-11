@@ -202,6 +202,32 @@ describe('New user', () => {
     expect(res.body).toMatchObject(badRequest('Password found in breach database', 'password'));
   });
 
+  test('Unexpected internal errors are not exposed to new user callers', async () => {
+    (pwnedPassword as unknown as Mock).mockRejectedValueOnce(new Error('smtp://mail.internal:587 auth failed'));
+
+    const res = await request(app)
+      .post('/auth/newuser')
+      .type('json')
+      .send({
+        firstName: 'Alexander',
+        lastName: 'Hamilton',
+        email: `alex${randomUUID()}@example.com`,
+        password: 'password!@#',
+        recaptchaToken: 'xyz',
+      });
+
+    expect(res).toHaveStatus(500);
+    expect(res.body).toMatchObject({
+      issue: [
+        {
+          details: {
+            text: 'Registration failed',
+          },
+        },
+      ],
+    });
+  });
+
   test('Email already registered', async () => {
     const registerRequest = {
       firstName: 'George',

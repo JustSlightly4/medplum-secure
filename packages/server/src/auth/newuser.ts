@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: Copyright Orangebot, Inc. and Medplum contributors
 // SPDX-License-Identifier: Apache-2.0
 import type { NewUserRequest, WithId } from '@medplum/core';
-import { badRequest, concatUrls, normalizeOperationOutcome } from '@medplum/core';
+import {
+  OperationOutcomeError,
+  badRequest,
+  concatUrls,
+  isOperationOutcome,
+  normalizeOperationOutcome,
+  serverError,
+} from '@medplum/core';
 import type { ClientApplication, Login, Project, User } from '@medplum/fhirtypes';
 import type { Request, Response } from 'express';
 import { body } from 'express-validator';
@@ -72,7 +79,7 @@ export async function newUserHandler(req: Request, res: Response): Promise<void>
     try {
       project = await getGlobalSystemRepo().readResource<Project>('Project', projectId);
     } catch (err) {
-      sendOutcome(res, normalizeOperationOutcome(err));
+      handlePublicRegistrationError(res, err);
       return;
     }
     const registrationOutcome = projectRegistrationAllowed(project);
@@ -119,8 +126,18 @@ export async function newUserHandler(req: Request, res: Response): Promise<void>
     }
     res.status(200).json({ login: login.id, emailVerificationRequired });
   } catch (err) {
-    sendOutcome(res, normalizeOperationOutcome(err));
+    handlePublicRegistrationError(res, err);
   }
+}
+
+function handlePublicRegistrationError(res: Response, err: unknown): void {
+  if (err instanceof OperationOutcomeError || isOperationOutcome(err)) {
+    sendOutcome(res, normalizeOperationOutcome(err));
+    return;
+  }
+
+  globalLogger.error('New user registration failed', err);
+  sendOutcome(res, serverError(new Error('Registration failed')));
 }
 
 export async function createUser(request: NewUserRequest): Promise<WithId<User>> {

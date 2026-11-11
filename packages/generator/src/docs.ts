@@ -402,6 +402,7 @@ function rewriteLinksText(text: string | undefined): string {
  */
 async function downloadAndUnzip(downloadURL: string, zipFilePath: string, outputFolder: string): Promise<void> {
   console.info('Downloading FHIR Spec...');
+  const outputRoot = path.resolve(outputFolder);
 
   const response = await fetch(downloadURL);
   if (!response.ok) {
@@ -422,7 +423,15 @@ async function downloadAndUnzip(downloadURL: string, zipFilePath: string, output
       .on('entry', function (entry) {
         const fileName = entry.path;
         const type = entry.type;
-        const fullPath = path.join(outputFolder, fileName).replaceAll('\\', '/');
+        const resolvedPath = path.resolve(outputRoot, fileName);
+
+        if (resolvedPath !== outputRoot && !resolvedPath.startsWith(outputRoot + path.sep)) {
+          entry.autodrain();
+          reject(new Error(`Refusing to extract zip entry outside of output folder: ${fileName}`));
+          return;
+        }
+
+        const fullPath = resolvedPath.replaceAll('\\', '/');
 
         if (type === 'Directory') {
           mkdirp.sync(fullPath);
