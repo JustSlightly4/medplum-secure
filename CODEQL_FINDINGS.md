@@ -1,6 +1,6 @@
 # CodeQL Findings: Triage and Recommended Fixes
 
-**Date:** 2026-11-06
+**Date:** 2026-11-11
 **Commit analyzed:** `2612cfa2b` (branch `main`)
 **Workflow replicated:** [.github/workflows/CodeQL.yml](.github/workflows/CodeQL.yml)
 **GitHub code scanning results:** [Security → Code scanning](https://github.com/JustSlightly4/medplum-secure/security/code-scanning?query=is%3Aopen+branch%3Amain+tool%3ACodeQL)
